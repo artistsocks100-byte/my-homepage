@@ -1,0 +1,453 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101827">
+<title>LinkGuard | URL 보안 검사</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0b1120;
+  --panel: #141e30;
+  --line: #28374e;
+  --text: #edf4ff;
+  --muted: #9aacc5;
+  --blue: #60a5fa;
+  --green: #34d399;
+  --red: #fb7185;
+  --yellow: #fbbf24;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+header {
+  padding: 22px 18px;
+  border-bottom: 1px solid var(--line);
+  background: #101827;
+}
+.brand { font-size: 22px; font-weight: 800; }
+.brand span { color: var(--green); }
+header p { color: var(--muted); font-size: 13px; margin-bottom: 0; }
+main { max-width: 760px; margin: auto; padding: 20px 14px 50px; }
+.hero { text-align: center; padding: 22px 0; }
+.shield { font-size: 42px; }
+h1 { font-size: 27px; margin: 10px 0; }
+p { line-height: 1.6; }
+.muted { color: var(--muted); font-size: 13px; }
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px;
+  margin: 14px 0;
+}
+label { display: block; font-weight: 700; margin-bottom: 10px; }
+input {
+  width: 100%;
+  padding: 15px 12px;
+  border-radius: 10px;
+  border: 1px solid #42536c;
+  background: #0b1120;
+  color: white;
+  font-size: 16px;
+  outline-color: var(--blue);
+}
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 13px 15px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.primary { background: #2563eb; color: white; width: 100%; margin-top: 12px; }
+.secondary { background: #24344b; color: white; }
+button:disabled { opacity: .5; }
+.note { font-size: 12px; color: var(--muted); }
+.status { font-weight: 800; font-size: 20px; }
+.score { font-size: 48px; font-weight: 900; }
+.green { color: var(--green); }
+.red { color: var(--red); }
+.yellow { color: var(--yellow); }
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.row:last-child { border-bottom: 0; }
+.row .detail { color: var(--muted); font-size: 12px; margin-top: 5px; overflow-wrap: anywhere; }
+.pill {
+  padding: 5px 8px;
+  border-radius: 7px;
+  background: #26354a;
+  font-size: 12px;
+  white-space: nowrap;
+}
+h2 { font-size: 17px; margin-top: 0; }
+h3 { font-size: 14px; }
+a { color: var(--blue); overflow-wrap: anywhere; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.actions button { flex: 1; }
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #cbd5e1;
+  font-size: 12px;
+}
+.hidden { display: none; }
+footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">🛡️ Link<span>Guard</span></div>
+  <p>URL Security Analyzer · 링크 위험 요소 분석</p>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="shield">🔎</div>
+    <h1>링크, 열기 전에 검사하세요</h1>
+    <p class="muted">URL 구조와 의심 요소를 분석하고 검사 기록을 관리하세요.</p>
+  </div>
+
+  <section class="panel">
+    <label for="urlInput">검사할 URL</label>
+    <input id="urlInput" type="text"
+      placeholder="https://example.com"
+      autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button class="primary" id="scanBtn" onclick="scanURL()">🔍 URL 위험도 검사</button>
+    <p class="note">검사한다고 링크가 안전해지는 것은 아닙니다. 의심스러운 주소를 직접 열지 마세요.</p>
+  </section>
+
+  <section id="results" class="hidden">
+    <div class="panel">
+      <h2>검사 결과</h2>
+      <div id="status" class="status">분석 중</div>
+      <div id="score" class="score">--</div>
+      <div class="muted">위험 지표 점수 · 100점 만점</div>
+      <p id="summary"></p>
+      <div class="actions">
+        <button class="secondary" onclick="downloadReport()">📄 보고서 저장</button>
+        <button class="secondary" onclick="copyReport()">📋 결과 복사</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>📌 URL 및 도메인 분석</h2>
+      <div id="urlDetails"></div>
+    </div>
+
+    <div class="panel">
+      <h2>🚨 위험 요소</h2>
+      <div id="findings"></div>
+    </div>
+
+    <div class="panel">
+      <h2>↪️ 리다이렉트 분석</h2>
+      <div id="redirectDetails"></div>
+      <p class="note">URL 문자열에서 확인할 수 있는 리다이렉트 단서입니다. 실제 이동 경로를 추적한 결과는 아닙니다.</p>
+    </div>
+
+    <div class="panel">
+      <h2>🌐 DNS 조회</h2>
+      <div id="dnsDetails">조회 전</div>
+      <p class="note">공개 DNS 서비스를 사용합니다. 조회 실패가 안전하다는 뜻은 아닙니다.</p>
+    </div>
+
+    <div class="panel">
+      <h2>🛡️ 외부 보안 검사</h2>
+      <div id="externalDetails"></div>
+      <p class="note">이 페이지에는 악성 URL 데이터베이스 API가 연결되어 있지 않습니다.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>🕘 검사 기록</h2>
+    <p class="muted">이 기기의 브라우저에 저장된 최근 검사 기록입니다.</p>
+    <div id="history"><p class="muted">아직 기록이 없습니다.</p></div>
+    <div class="actions">
+      <button class="secondary" onclick="exportHistory()">기록 내보내기</button>
+      <button class="secondary" onclick="clearHistory()">기록 삭제</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>ℹ️ 검사 범위</h2>
+    <p class="muted">
+      이 도구는 브라우저에서 URL 문자열을 분석하는 기본 검사기입니다.
+      실제 악성 사이트 판정, 최종 도착 주소 추적, WHOIS, 도메인 등록일,
+      IP 평판 및 상세 DNS 분석에는 별도 서버와 보안 API 연동이 필요합니다.
+      검사 점수는 공식 보안 판정이 아닙니다.
+    </p>
+  </section>
+</main>
+
+<footer>LinkGuard · 개인용 URL 분석 도구</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+let lastReport = null;
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;',
+    '"':'&quot;', "'":'&#39;'
+  })[c]);
+}
+
+function row(label, value) {
+  return '<div class="row"><div><strong>' +
+    escapeHTML(label) + '</strong></div><div style="text-align:right;max-width:62%;overflow-wrap:anywhere">' +
+    escapeHTML(value) + '</div></div>';
+}
+
+function finding(title, detail, level) {
+  return { title, detail, level };
+}
+
+function scanURL() {
+  const raw = $('urlInput').value.trim();
+  $('results').classList.remove('hidden');
+
+  if (!raw || raw.length > 4096) {
+    $('status').textContent = '입력 확인 필요';
+    $('score').textContent = '--';
+    $('summary').textContent = 'URL을 입력해 주세요. 주소는 4096자 이하여야 합니다.';
+    return;
+  }
+
+  let u;
+  try {
+    u = new URL(raw.includes('://') ? raw : 'https://' + raw);
+    if (!['http:', 'https:'].includes(u.protocol) || !u.hostname ||
+        !u.hostname.includes('.') && u.hostname !== 'localhost') throw Error();
+  } catch {
+    $('status').textContent = '유효하지 않은 URL';
+    $('score').textContent = '--';
+    $('summary').textContent = '주소 형식을 확인해 주세요.';
+    $('urlDetails').innerHTML = '';
+    $('findings').innerHTML = '';
+    $('dnsDetails').textContent = '유효한 도메인이 없습니다.';
+    $('redirectDetails').textContent = '분석할 수 없습니다.';
+    $('externalDetails').textContent = '검사하지 않았습니다.';
+    return;
+  }
+
+  const host = u.hostname.toLowerCase();
+  const findings = [];
+  let score = 0;
+  const add = (title, detail, points=10) => {
+    findings.push(finding(title, detail, 'warning'));
+    score += points;
+  };
+
+  if (u.protocol !== 'https:')
+    add('HTTPS 미사용', '전송 구간이 암호화되지 않을 수 있습니다.', 15);
+
+  if (u.username || u.password)
+    add('URL에 사용자 정보 포함', '주소 안에 사용자 이름이나 비밀번호 형식이 있습니다.', 25);
+
+  if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(host) ||
+      /^\[[0-9a-f:]+\]$/i.test(host))
+    add('IP 주소 직접 사용', '도메인 대신 IP 주소를 사용합니다. 단독으로 악성이라는 뜻은 아닙니다.', 15);
+
+  if (host.startsWith('xn--') || host.includes('.xn--'))
+    add('국제화 도메인', '비슷하게 보이는 문자를 이용한 사칭 여부를 확인하세요.', 15);
+
+  if (host.split('.').length >= 5)
+    add('하위 도메인이 많음', '도메인 구조를 자세히 확인하세요.', 10);
+
+  if (host.length > 50)
+    add('긴 도메인 이름', '주소를 위장했는지 확인하세요.', 10);
+
+  if (raw.includes('@'))
+    add('@ 문자 포함', 'URL에서 @ 앞부분은 실제 호스트가 아닐 수 있습니다.', 20);
+
+  if (/%[0-9a-f]{2}/i.test(u.pathname + u.search))
+    add('인코딩된 문자', '인코딩이 사용되었습니다. 주변 URL 문맥을 확인하세요.', 5);
+
+  if (u.href.length > 200)
+    add('매우 긴 URL', '긴 경로나 매개변수가 포함되어 있습니다.', 10);
+
+  if (/(login|verify|secure|account|update|password|wallet|banking)/i.test(host))
+    add('민감한 단어가 포함된 도메인', '로그인·계정 관련 단어가 있지만 이것만으로 피싱은 확정되지 않습니다.', 10);
+
+  if (/(bit\.ly|tinyurl\.com|t\.co|is\.gd|cutt\.ly|shorturl\.at)$/i.test(host))
+    add('URL 단축 도메인', '최종 도착 주소를 별도로 확인해야 합니다.', 15);
+
+  if (/[^\x00-\x7F]/.test(host))
+    add('비ASCII 도메인 문자', '동형 문자 등 도메인 사칭 가능성을 확인하세요.', 15);
+
+  if (!findings.length) {
+    findings.push(finding('명확한 기본 위험 패턴 없음',
+      '제한된 문자열 검사에서 주요 패턴이 발견되지 않았습니다. 안전이 확인된 것은 아닙니다.', 'info'));
+  }
+
+  score = Math.min(100, score);
+  const level = score >= 50 ? '높음' : score >= 25 ? '주의' : '낮음';
+  $('status').textContent = '예비 위험도: ' + level;
+  $('status').className = 'status ' + (score >= 50 ? 'red' : score >= 25 ? 'yellow' : 'green');
+  $('score').textContent = score + '/100';
+  $('score').className = 'score ' + (score >= 50 ? 'red' : score >= 25 ? 'yellow' : 'green');
+  $('summary').textContent = '발견된 의심 지표 ' + findings.filter(x => x.level === 'warning').length +
+    '개. 이 점수는 통계적 악성 확률이 아니며, 악성 데이터베이스 검사 결과도 아닙니다.';
+
+  $('urlDetails').innerHTML =
+    row('입력 주소', raw) +
+    row('정규화된 주소', u.href) +
+    row('프로토콜', u.protocol) +
+    row('호스트', host) +
+    row('포트', u.port || '기본 포트') +
+    row('경로', u.pathname || '/') +
+    row('쿼리 매개변수 수', u.searchParams.size) +
+    row('해시 포함', u.hash ? '예' : '아니요');
+
+  $('findings').innerHTML = findings.map(f =>
+    '<div class="row"><div><strong>' + escapeHTML(f.title) +
+    '</strong><div class="detail">' + escapeHTML(f.detail) +
+    '</div></div><span class="pill">' +
+    (f.level === 'warning' ? '확인 필요' : '정보') + '</span></div>'
+  ).join('');
+
+  const redirects = [];
+  for (const [k,v] of u.searchParams.entries()) {
+    if (/^(url|u|target|redirect|redirect_url|next|dest|destination|return|returnto|continue|link)$/i.test(k)) {
+      redirects.push(k + ' = ' + v);
+    }
+  }
+  $('redirectDetails').innerHTML = redirects.length
+    ? redirects.map(x => '<div class="row"><span>' + escapeHTML(x) + '</span></div>').join('')
+    : '<p class="muted">명확한 리다이렉트 매개변수를 찾지 못했습니다. 실제 이동 경로를 확인한 것은 아닙니다.</p>';
+
+  $('externalDetails').innerHTML =
+    '<p class="muted">외부 평판 조회는 아직 연결되지 않았습니다.</p>' +
+    '<p>URL 평판 확인: <a href="https://transparencyreport.google.com/safe-browsing/search" target="_blank" rel="noopener noreferrer">Google Safe Browsing 사이트 상태 확인</a></p>' +
+    '<p>추가 검사: <a href="https://www.virustotal.com/gui/home/url" target="_blank" rel="noopener noreferrer">VirusTotal URL 검사</a></p>' +
+    '<p class="note">외부 서비스에 URL을 제출하면 해당 서비스가 URL을 수집할 수 있습니다. 비공개 토큰이나 개인정보가 포함된 URL은 제출하지 마세요.</p>';
+
+  $('dnsDetails').innerHTML = '<p class="muted">DNS 조회 중...</p>';
+  lookupDNS(host);
+
+  lastReport = {
+    tool: 'LinkGuard',
+    checkedAt: new Date().toISOString(),
+    input: raw,
+    normalizedURL: u.href,
+    hostname: host,
+    score: score,
+    riskLabel: level,
+    findings: findings,
+    note: '기본 휴리스틱 결과. 안전성 보증 아님.'
+  };
+
+  saveHistory(lastReport);
+  renderHistory();
+}
+
+async function lookupDNS(host) {
+  // Cloudflare 공개 DNS-over-HTTPS: 브라우저에서 가능한 제한적 조회
+  const types = [{name:'A (IPv4)',type:'A'}, {name:'AAAA (IPv6)',type:'AAAA'}, {name:'MX (메일)',type:'MX'}];
+  const output = [];
+  for (const t of types) {
+    try {
+      const res = await fetch('https://cloudflare-dns.com/dns-query?name=' +
+        encodeURIComponent(host) + '&type=' + t.type, {
+          headers: {'accept':'application/dns-json'}
+        });
+      if (!res.ok) throw Error('조회 실패');
+      const data = await res.json();
+      const answers = (data.Answer || []).map(a => a.data).slice(0, 5);
+      output.push(row(t.name, answers.join(', ') || '응답 없음'));
+    } catch {
+      output.push(row(t.name, '조회 실패 또는 네트워크 제한'));
+    }
+  }
+  $('dnsDetails').innerHTML = output.join('');
+}
+
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem('lg-history') || '[]'); }
+  catch { return []; }
+}
+function saveHistory(report) {
+  try {
+    const h = getHistory();
+    h.unshift(report);
+    localStorage.setItem('lg-history', JSON.stringify(h.slice(0, 30)));
+  } catch {}
+}
+function renderHistory() {
+  const h = getHistory();
+  if (!h.length) {
+    $('history').innerHTML = '<p class="muted">아직 기록이 없습니다.</p>';
+    return;
+  }
+  $('history').innerHTML = h.map((r,i) =>
+    '<div class="row"><div style="min-width:0"><strong>' +
+    escapeHTML(r.riskLabel) + ' · ' + r.score + '/100</strong>' +
+    '<div class="detail">' + escapeHTML(r.input) + '</div><div class="detail">' +
+    escapeHTML(new Date(r.checkedAt).toLocaleString()) +
+    '</div></div><button class="secondary" onclick="showHistory(' + i + ')">보기</button></div>'
+  ).join('');
+}
+function showHistory(i) {
+  const r = getHistory()[i];
+  if (!r) return;
+  lastReport = r;
+  $('results').classList.remove('hidden');
+  $('status').textContent = '기록 결과: ' + r.riskLabel;
+  $('score').textContent = r.score + '/100';
+  $('summary').textContent = r.note;
+  $('urlDetails').innerHTML = row('입력 주소', r.input) +
+    row('호스트', r.hostname) + row('검사 시각', r.checkedAt);
+  $('findings').innerHTML = (r.findings || []).map(f =>
+    '<div class="row"><strong>' + escapeHTML(f.title) +
+    '</strong><span class="pill">' + escapeHTML(f.detail) + '</span></div>').join('');
+  $('redirectDetails').textContent = '저장된 기록에는 실제 리다이렉트 추적 데이터가 없습니다.';
+  $('externalDetails').textContent = '이전 외부 평판 조회 결과는 저장하지 않았습니다.';
+  $('results').scrollIntoView({behavior:'smooth'});
+}
+function downloadJSON(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function downloadReport() {
+  if (!lastReport) return alert('먼저 URL을 검사해 주세요.');
+  downloadJSON(lastReport, 'linkguard-report.json');
+}
+function exportHistory() {
+  downloadJSON(getHistory(), 'linkguard-history.json');
+}
+async function copyReport() {
+  if (!lastReport) return alert('먼저 URL을 검사해 주세요.');
+  const text = JSON.stringify(lastReport, null, 2);
+  try {
+    await navigator.clipboard.writeText(text);
+    alert('검사 결과를 복사했습니다.');
+  } catch {
+    alert('복사할 수 없습니다. 보고서 저장 버튼을 이용해 주세요.');
+  }
+}
+function clearHistory() {
+  if (!confirm('저장된 검사 기록을 모두 삭제할까요?')) return;
+  localStorage.removeItem('lg-history');
+  renderHistory();
+}
+renderHistory();
+</script>
+</body>
+</html>
