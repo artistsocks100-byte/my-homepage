@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080d1c">
+<title>LinkGuard — URL Security Scanner</title>
+<style>
+:root{color-scheme:dark;--bg:#080d1c;--line:#263653;--text:#edf4ff;--muted:#91a3c2;--blue:#68a7ff;--red:#ff667f;--yellow:#ffd166;--green:#61e6a6}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(900px 500px at 80% -10%,#192c57,transparent 60%),#080d1c;color:var(--text);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input{font:inherit}button{cursor:pointer}
+.wrap{max-width:1120px;margin:auto;padding:24px 18px 60px}
+.top,.brand,.sectionhead,.urlrow,.actions,.subrow{display:flex;align-items:center;gap:10px}
+.top,.sectionhead{justify-content:space-between}
+.brand h1{margin:0;font-size:20px}.brand p{margin:0;color:var(--muted);font-size:11px}
+.logo{background:linear-gradient(135deg,#5c9cff,#6b66f6);padding:12px;border-radius:14px;font-size:22px}
+.pill,.tag{border:1px solid #294464;background:#10243c;color:#9ed8ff;border-radius:999px;padding:7px 10px;font-size:11px}
+.hero{text-align:center;margin:38px auto 25px;max-width:760px}
+.eyebrow{color:#62e6df;font-size:12px;letter-spacing:2px;font-weight:bold}
+.hero h2{font-size:clamp(30px,5vw,48px);line-height:1.15}
+.hero h2 span{background:linear-gradient(90deg,#7bb6ff,#72f0df);-webkit-background-clip:text;color:transparent}
+.hero p,.hint,.muted{color:var(--muted)}
+.card{background:linear-gradient(145deg,#121d33,#0d1527);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 18px 50px #0002}
+.scanbox{max-width:850px;margin:auto}
+.label{display:block;margin-bottom:8px;font-weight:bold}
+.urlrow input{flex:1;min-width:0;background:#080f20;border:1px solid #304361;border-radius:13px;padding:15px;color:white}
+button{border-radius:11px;padding:10px 13px;background:#101b30;border:1px solid #2b3d5a;color:#bfd0ea}
+.primary{background:linear-gradient(120deg,#5797ff,#6865f6);border:0;color:white;font-weight:bold;padding:14px 18px}
+.subrow,.actions{flex-wrap:wrap;margin-top:12px}
+.hint{font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:15px;margin-top:18px}
+.span12{grid-column:span 12}.span8{grid-column:span 8}.span6{grid-column:span 6}.span4{grid-column:span 4}
+.hidden{display:none!important}
+.status{display:inline-block;border-radius:99px;padding:6px 10px;font-size:11px;font-weight:bold}
+.safe{background:#103527;color:#7df0b5}.warn{background:#3a2b14;color:#ffd67c}.danger{background:#3d1825;color:#ff8fa2}.neutral{background:#1b2a43;color:#b8c8e1}
+.scorewrap{display:flex;align-items:center;gap:18px}
+.gauge{width:110px;height:110px;flex-shrink:0;border-radius:50%;background:conic-gradient(var(--blue) var(--p),#24334e var(--p));display:grid;place-items:center;position:relative}
+.gauge:before{content:"";position:absolute;inset:9px;border-radius:50%;background:#10182b}
+.gauge div{z-index:1;text-align:center}.gauge strong{font-size:28px}.gauge small{display:block;color:var(--muted);font-size:10px}
+.resulttitle{font-size:21px;font-weight:800;margin:0 0 5px}.resulturl{font-size:12px;overflow-wrap:anywhere;color:#b8c8e1}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
+.metric,.info{background:#0a1325;border:1px solid #24334e;border-radius:12px;padding:12px;min-width:0}
+.metric strong{display:block;font-size:20px}.metric span,.info label{font-size:11px;color:var(--muted)}
+.checks{display:grid;gap:8px}.check{display:flex;gap:10px;background:#0b1426;border:1px solid #23334d;border-radius:12px;padding:11px}
+.check b{display:block;font-size:13px}.check small{display:block;color:var(--muted);font-size:12px}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.info label{display:block}.info strong{font-size:12px;overflow-wrap:anywhere}
+.historylist{display:grid;gap:8px}.historyitem{display:flex;align-items:center;gap:10px;background:#0b1426;border:1px solid #23334d;border-radius:12px;padding:10px}
+.hurl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.historyitem small{display:block;color:var(--muted);font-size:10px}
+.empty{text-align:center;color:var(--muted);padding:24px;border:1px dashed #30415f;border-radius:12px}
+.notice{border:1px solid #51421e;background:#2a2315;color:#f5d99a;border-radius:12px;padding:12px;font-size:12px}
+.divider{height:1px;background:#24334e;margin:15px 0}
+.qrpreview{max-width:100%;max-height:250px;border-radius:12px;margin-top:12px}
+.footer{text-align:center;color:#7485a4;font-size:11px;margin-top:25px}
+.pathitem{border-left:2px solid #3d6ca9;padding:3px 0 12px 12px;margin-left:5px;overflow-wrap:anywhere;font-size:12px}
+@media(max-width:720px){.wrap{padding:16px 12px 40px}.card{padding:15px}.span8,.span6,.span4{grid-column:span 12}.urlrow{flex-direction:column;align-items:stretch}.primary{width:100%}.scorewrap{align-items:flex-start}.gauge{width:90px;height:90px}.gauge strong{font-size:23px}.pill{font-size:9px}.hero{margin:25px auto 20px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <div class="brand"><div class="logo">⛨</div><div><h1>LinkGuard</h1><p>URL SECURITY INTELLIGENCE</p></div></div>
+  <div class="pill">● 로컬 보안 분석</div>
+</header>
+
+<section class="hero">
+  <div class="eyebrow">LINK SECURITY SCANNER</div>
+  <h2>클릭하기 전에,<br><span>먼저 안전을 확인하세요.</span></h2>
+  <p class="muted">URL 위험 신호 분석 · DNS 조회 · 검사 기록 · QR 코드 검사</p>
+</section>
+
+<section class="card scanbox">
+  <label class="label" for="urlInput">검사할 URL</label>
+  <div class="urlrow">
+    <input id="urlInput" type="url" placeholder="https://example.com" autocomplete="url" autocapitalize="off">
+    <button id="scanBtn" class="primary">⌕ URL 검사하기</button>
+  </div>
+  <div class="subrow">
+    <button id="pasteBtn">붙여넣기</button>
+    <button id="qrToggle">▦ QR 코드 검사</button>
+    <button id="clearInput">초기화</button>
+  </div>
+  <p class="hint">위험도 점수는 참고용입니다. 낮은 점수가 안전을 보장하지 않습니다.</p>
+</section>
+
+<section id="qrPanel" class="card scanbox hidden" style="margin-top:14px">
+  <div class="sectionhead"><h3>QR 코드 검사</h3><button id="closeQR">닫기</button></div>
+  <div class="subrow">
+    <button id="cameraBtn">카메라 켜기</button>
+    <label for="qrFile" style="padding:10px;border:1px solid #2b3d5a;border-radius:11px;cursor:pointer">QR 이미지 선택</label>
+    <input id="qrFile" type="file" accept="image/*" hidden>
+  </div>
+  <video id="qrVideo" class="qrpreview hidden" playsinline autoplay></video>
+  <canvas id="qrCanvas" class="hidden"></canvas>
+  <p id="qrMessage" class="hint">카메라 권한을 허용하거나 QR 이미지를 선택하세요.</p>
+</section>
+
+<div id="results" class="hidden">
+<div class="grid">
+  <section class="card span8">
+    <div class="sectionhead"><h3>검사 요약</h3><span id="statusBadge" class="status neutral">검사 완료</span></div>
+    <div class="scorewrap">
+      <div id="gauge" class="gauge" style="--p:0deg"><div><strong id="score">0</strong><small>/ 100 위험도</small></div></div>
+      <div><p id="resultTitle" class="resulttitle">분석 결과</p><div id="resultUrl" class="resulturl"></div><p id="resultDesc" class="muted" style="font-size:12px"></p></div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><strong id="riskCount">0</strong><span>위험 신호</span></div>
+      <div class="metric"><strong id="domainType">—</strong><span>주소 형식</span></div>
+      <div class="metric"><strong id="httpsState">—</strong><span>HTTPS</span></div>
+    </div>
+    <div class="actions">
+      <button id="downloadReport">↓ JSON 보고서</button>
+      <button id="copyReport">요약 복사</button>
+      <button id="vtBtn">VirusTotal ↗</button>
+      <button id="googleBtn">Google Safe Browsing ↗</button>
+    </div>
+  </section>
+
+  <section class="card span4">
+    <div class="sectionhead"><h3>분석 정보</h3></div>
+    <div class="twocol">
+      <div class="info"><label>호스트</label><strong id="hostInfo">—</strong></div>
+      <div class="info"><label>프로토콜</label><strong id="protocolInfo">—</strong></div>
+      <div class="info"><label>포트</label><strong id="portInfo">—</strong></div>
+      <div class="info"><label>주소 형태</label><strong id="ipInfo">—</strong></div>
+      <div class="info" style="grid-column:span 2"><label>현재 URL</label><strong id="finalInfo">—</strong></div>
+    </div>
+  </section>
+
+  <section class="card span6">
+    <div class="sectionhead"><h3>위험 요소 분석</h3><span id="checksCount" class="tag">0개</span></div>
+    <div id="checksList" class="checks"></div>
+  </section>
+
+  <section class="card span6">
+    <div class="sectionhead"><h3>도메인 · DNS 조회</h3><span id="dnsBadge" class="status neutral">대기</span></div>
+    <div id="dnsContent" class="muted" style="font-size:12px">DNS 조회 결과가 여기에 표시됩니다.</div>
+    <div class="divider"></div>
+    <div class="notice">DNS 조회는 네트워크나 브라우저 정책 때문에 실패할 수 있습니다. DNS만으로 악성 여부를 판단할 수 없습니다.</div>
+  </section>
+
+  <section class="card span6">
+    <div class="sectionhead"><h3>리다이렉트 경로</h3><span class="status warn">제한 있음</span></div>
+    <div id="redirectContent" class="muted" style="font-size:12px">검사 전</div>
+    <p class="hint">브라우저만으로 임의 사이트의 전체 리다이렉트를 추적할 수 없습니다.</p>
+  </section>
+
+  <section class="card span6">
+    <div class="sectionhead"><h3>외부 평판 검사</h3></div>
+    <div class="checks">
+      <div class="check"><div>↗</div><div><b>VirusTotal</b><small>외부 페이지에서 URL 평판을 별도로 확인하세요.</small></div></div>
+      <div class="check"><div>↗</div><div><b>Google Safe Browsing</b><small>공개 확인 페이지로 연결합니다. 자동 API 검사는 아닙니다.</small></div></div>
+      <div class="check"><div>!</div><div><b>실시간 DB 자동 연동</b><small>서버 또는 API 연결이 아직 필요합니다.</small></div></div>
+    </div>
+  </section>
+</div>
+</div>
+
+<div class="grid">
+<section class="card span12">
+  <div class="sectionhead"><h3>최근 검사 기록</h3><div class="subrow" style="margin:0"><button id="exportHistory">기록 내보내기</button><button id="clearHistory">기록 지우기</button></div></div>
+  <div id="historyList" class="historylist"></div>
+  <p class="hint">기록은 이 브라우저에 저장됩니다. 다른 기기와 동기화되지 않습니다.</p>
+</section>
+</div>
+<div class="footer">LinkGuard · 독립적인 URL 위험 신호 분석 도구</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const HISTORY_KEY='linkguard_history_v2';
+let currentReport=null,cameraStream=null,qrTimer=null;
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function normalizeURL(raw){
+  let s=raw.trim();
+  if(!s)throw Error('URL을 입력해 주세요.');
+  if(/[\u0000-\u001f\u007f\s]/.test(s))throw Error('URL의 공백을 확인해 주세요.');
+  if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(s))s='https://'+s;
+  let u;try{u=new URL(s)}catch(e){throw Error('올바른 URL이 아닙니다.')}
+  if(!['http:','https:'].includes(u.protocol))throw Error('http 또는 https 주소만 검사할 수 있습니다.');
+  if(!u.hostname)throw Error('도메인을 확인해 주세요.');
+  return u;
+}
+function isIP(h){return /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/.test(h)||h.includes(':')&&/^[0-9a-f:]+$/i.test(h)}
+function analyze(u){
+  const checks=[];let score=0;
+  const add=(name,level,detail,points=0)=>{checks.push({name,level,detail,points});score+=points};
+  const h=u.hostname.toLowerCase(),full=u.href;
+  const short=['bit.ly','tinyurl.com','t.co','is.gd','cutt.ly','rb.gy','rebrand.ly','ow.ly','buff.ly','lnkd.in','shorturl.at'];
+  const shortHit=short.some(x=>h===x||h.endsWith('.'+x));
+  add('HTTPS 연결',u.protocol==='https:'?'good':'warn',u.protocol==='https:'?'HTTPS 사용 중입니다. 암호화는 사이트의 신뢰성을 보장하지 않습니다.':'HTTP는 연결이 암호화되지 않습니다.',u.protocol==='https:'?0:12);
+  add('단축 URL',shortHit?'warn':'good',shortHit?'단축 주소라 실제 도착지를 확인해야 합니다.':'일반적인 단축 도메인 목록과 일치하지 않습니다.',shortHit?15:0);
+  add('IP 주소 직접 사용',isIP(h)?'warn':'good',isIP(h)?'도메인 대신 IP 주소를 사용합니다.':'IP 주소 형식이 아닙니다.',isIP(h)?18:0);
+  const user=!!(u.username||u.password);
+  add('사용자 정보 포함',user?'danger':'good',user?'URL에 사용자 이름 또는 비밀번호처럼 보이는 정보가 있습니다.':'URL 사용자 정보가 없습니다.',user?22:0);
+  const puny=h.includes('xn--');
+  add('Punycode 도메인',puny?'warn':'good',puny?'유사 문자로 브랜드를 흉내 내는지 확인하세요.':'Punycode 표기가 없습니다.',puny?12:0);
+  const at=full.includes('@');
+  add('@ 기호',at?'warn':'good',at?'실제 호스트가 아닌 문자열을 주소 앞부분에 숨겼을 수 있습니다.':'@ 기호가 없습니다.',at?12:0);
+  const hy=(h.match(/-/g)||[]).length;
+  add('도메인 하이픈',hy>=3?'warn':'good',hy>=3?'하이픈이 여러 개 있어 사칭 주소인지 확인하세요.':'하이픈 수가 과도하지 않습니다.',hy>=3?7:0);
+  const digits=(h.match(/\d/g)||[]).length;
+  add('도메인 숫자 패턴',digits>=5?'warn':'good',digits>=5?'호스트에 숫자가 많이 포함되어 있습니다.':'숫자 패턴만으로 위험을 판단할 수는 없습니다.',digits>=5?6:0);
+  const words=['login','verify','account','secure','update','wallet','banking','password','signin','gift','free','bonus','claim','urgent','payment','confirm'];
+  const found=words.filter(w=>(h+'/'+u.pathname).toLowerCase().includes(w));
+  add('피싱 유도 키워드',found.length?'warn':'good',found.length?'의심 키워드: '+found.join(', '):'일반적인 피싱 유도 키워드를 찾지 못했습니다.',Math.min(14,found.length*4));
+  const tld=h.split('.').pop(),uncommon=['zip','mov','click','country','gq','tk','ml','cf','work','support'];
+  add('주의 TLD',uncommon.includes(tld)?'warn':'good',uncommon.includes(tld)?'.'+tld+' 도메인은 추가 확인이 필요합니다.':'주의 TLD 목록과 일치하지 않습니다.',uncommon.includes(tld)?6:0);
+  add('URL 길이',full.length>180?'warn':'good',full.length>180?'URL이 매우 깁니다.':'URL 길이가 과도하지 않습니다.',full.length>180?6:0);
+  const params=[...u.searchParams.keys()];
+  add('쿼리 매개변수',params.length>8?'warn':'good',params.length>8?'매개변수가 많습니다.':'매개변수 수가 과도하지 않습니다.',params.length>8?4:0);
+  score=Math.min(100,score);
+  const count=checks.filter(c=>c.level!=='good').length;
+  const status=checks.some(c=>c.level==='danger')||score>=45?'danger':score>=18||count>=2?'warn':'safe';
+  return {score,checks,count,status};
+}
+function label(s){return s==='safe'?'뚜렷한 위험 신호 적음':s==='warn'?'주의 필요':'위험 신호 다수'}
+function makeReport(u,a){return {tool:'LinkGuard',version:'2.0',checkedAt:new Date().toISOString(),inputUrl:u.href,host:u.hostname,protocol:u.protocol,port:u.port||'(기본 포트)',path:u.pathname,queryParameterCount:[...u.searchParams.keys()].length,isIpAddress:isIP(u.hostname),https:u.protocol==='https:',finalUrl:u.href,redirectTrace:{status:'not_fully_available',reason:'전체 추적에는 서버 또는 API가 필요합니다.'},riskScore:a.score,riskStatus:a.status,checks:a.checks,dns:{status:'pending'},externalReputation:{status:'manual_links_only'},limitations:['위험 점수는 URL 특징 기반 추정치입니다.','실시간 악성 URL 데이터베이스와 자동 비교하지 않습니다.','브라우저 정책 때문에 전체 리다이렉트를 추적할 수 없습니다.','안전 판정은 무해함을 보장하지 않습니다.']};}
+function render(u,a,r){
+  currentReport=r;$('results').classList.remove('hidden');
+  $('score').textContent=a.score;$('gauge').style.setProperty('--p',a.score*3.6+'deg');
+  const color=a.status==='safe'?'var(--green)':a.status==='warn'?'var(--yellow)':'var(--red)';
+  $('gauge').style.background=`conic-gradient(${color} ${a.score*3.6}deg,#24334e ${a.score*3.6}deg)`;
+  $('statusBadge').className='status '+a.status;$('statusBadge').textContent=label(a.status);
+  $('resultTitle').textContent=a.status==='safe'?'뚜렷한 위험 신호가 적어요':a.status==='warn'?'주의해서 확인하세요':'여러 위험 신호가 발견됐어요';
+  $('resultUrl').textContent=u.href;$('resultDesc').textContent='URL 특징에 따른 참고용 추정치이며 실제 사이트나 실시간 위협 DB 검사 결과는 아닙니다.';
+  $('riskCount').textContent=a.count;$('domainType').textContent=isIP(u.hostname)?'IP 주소':'도메인';$('httpsState').textContent=u.protocol==='https:'?'사용':'미사용';
+  $('hostInfo').textContent=u.hostname;$('protocolInfo').textContent=u.protocol;$('portInfo').textContent=u.port||'기본 포트';$('ipInfo').textContent=isIP(u.hostname)?'IP 주소':'도메인';$('finalInfo').textContent=u.href;
+  $('checksCount').textContent=a.checks.length+'개 항목';
+  $('checksList').innerHTML=a.checks.map(c=>`<div class="check"><div style="color:${c.level==='good'?'var(--green)':c.level==='warn'?'var(--yellow)':'var(--red)'}">${c.level==='good'?'✓':c.level==='warn'?'!':'×'}</div><div><b>${esc(c.name)}</b><small>${esc(c.detail)}</small></div></div>`).join('');
+  $('redirectContent').innerHTML=`<div class="pathitem"><b>입력 주소</b><br>${esc(u.href)}</div><div class="pathitem"><b>최종 도착 주소</b><br>자동 추적 불가 — 브라우저 CORS 제한</div>`;
+  $('dnsContent').textContent='공개 DNS 조회 중…';$('dnsBadge').className='status neutral';$('dnsBadge').textContent='조회 중';
+  $('vtBtn').onclick=()=>window.open('https://www.virustotal.com/gui/home/url','_blank','noopener,noreferrer');
+  $('googleBtn').onclick=()=>window.open('https://transparencyreport.google.com/safe-browsing/search?url='+encodeURIComponent(u.href),'_blank','noopener,noreferrer');
+  saveHistory(r);runDNS(u.hostname,r);
+}
+async function runDNS(host,r){
+  if(isIP(host)){$('dnsContent').textContent='호스트가 IP 주소이므로 DNS 조회를 생략했습니다.';$('dnsBadge').textContent='해당 없음';r.dns={status:'not_applicable'};return}
+  try{
+    const records=await Promise.all(['A','AAAA','MX','NS'].map(async type=>{
+      const res=await fetch('https://cloudflare-dns.com/dns-query?name='+encodeURIComponent(host)+'&type='+type,{headers:{accept:'application/dns-json'}});
+      if(!res.ok)throw Error('DNS error');
+      const j=await res.json();return {type,status:j.Status,answers:(j.Answer||[]).map(x=>x.data).slice(0,8)};
+    }));
+    r.dns={provider:'Cloudflare DNS over HTTPS',status:'success',records};
+    $('dnsContent').innerHTML=records.map(q=>`<div class="info" style="margin-bottom:8px"><label>${q.type} 레코드</label><strong>${q.answers.length?q.answers.map(esc).join('<br>'):'레코드 없음 또는 공개되지 않음'}</strong></div>`).join('');
+    $('dnsBadge').className='status safe';$('dnsBadge').textContent='응답 수신';
+  }catch(e){r.dns={status:'unavailable'};$('dnsContent').textContent='DNS 조회 실패. 인터넷 연결 또는 브라우저 정책 때문에 차단됐을 수 있습니다.';$('dnsBadge').className='status warn';$('dnsBadge').textContent='조회 실패'}
+  currentReport=r;
+}
+function history(){try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]')}catch(e){return []}}
+function saveHistory(r){const h=history();h.unshift({checkedAt:r.checkedAt,inputUrl:r.inputUrl,riskScore:r.riskScore,riskStatus:r.riskStatus,report:r});try{localStorage.setItem(HISTORY_KEY,JSON.stringify(h.slice(0,50)))}catch(e){}renderHistory()}
+function renderHistory(){
+  const h=history();
+  $('historyList').innerHTML=h.length?h.map((x,i)=>`<div class="historyitem"><div style="min-width:0;flex:1"><div class="hurl">${esc(x.inputUrl)}</div><small>${new Date(x.checkedAt).toLocaleString('ko-KR')} · 위험도 ${x.riskScore}/100</small></div><span class="status ${x.riskStatus}">${label(x.riskStatus)}</span><button data-history="${i}">열기</button></div>`).join(''):'<div class="empty">아직 검사 기록이 없습니다.</div>';
+  $('historyList').querySelectorAll('[data-history]').forEach(b=>b.onclick=()=>{const x=history()[+b.dataset.history];try{const u=normalizeURL(x.inputUrl);render(u,analyze(u),x.report);$('results').scrollIntoView({behavior:'smooth'})}catch(e){}});
+}
+function downloadJSON(obj,name){const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+async function scan(){
+  try{const u=normalizeURL($('urlInput').value);$('urlInput').value=u.href;const a=analyze(u),r=makeReport(u,a);render(u,a,r);$('results').scrollIntoView({behavior:'smooth'})}
+  catch(e){alert(e.message)}
+}
+$('scanBtn').onclick=scan;$('urlInput').onkeydown=e=>{if(e.key==='Enter')scan()};
+$('pasteBtn').onclick=async()=>{try{$('urlInput').value=await navigator.clipboard.readText()}catch(e){alert('입력창을 길게 눌러 붙여넣어 주세요.')}};
+$('clearInput').onclick=()=>{$('urlInput').value='';$('urlInput').focus()};
+$('downloadReport').onclick=()=>{if(currentReport)downloadJSON(currentReport,'linkguard-report.json')};
+$('copyReport').onclick=async()=>{if(!currentReport)return;const t=`LinkGuard 검사 요약\nURL: ${currentReport.inputUrl}\n위험도: ${currentReport.riskScore}/100\n판정: ${label(currentReport.riskStatus)}\n주의: 참고용 검사이며 안전을 보장하지 않습니다.`;try{await navigator.clipboard.writeText(t);alert('요약을 복사했습니다.')}catch(e){prompt('요약을 복사하세요.',t)}};
+$('exportHistory').onclick=()=>downloadJSON({tool:'LinkGuard',history:history()},'linkguard-history.json');
+$('clearHistory').onclick=()=>{if(confirm('검사 기록을 모두 지울까요?')){localStorage.removeItem(HISTORY_KEY);renderHistory()}};
+$('qrToggle').onclick=()=>$('qrPanel').classList.toggle('hidden');
+$('closeQR').onclick=stopCamera;
+function stopCamera(){if(cameraStream)cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;if(qrTimer)cancelAnimationFrame(qrTimer);$('qrVideo').classList.add('hidden');$('cameraBtn').textContent='카메라 켜기'}
+async function loadQR(){if(window.jsQR)return;await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+$('cameraBtn').onclick=async()=>{
+  if(cameraStream){stopCamera();return}
+  try{
+    await loadQR();cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+    const v=$('qrVideo'),c=$('qrCanvas'),ctx=c.getContext('2d',{willReadFrequently:true});v.srcObject=cameraStream;v.classList.remove('hidden');$('cameraBtn').textContent='카메라 끄기';
+    const tick=()=>{if(!cameraStream)return;if(v.readyState>=2){c.width=v.videoWidth;c.height=v.videoHeight;ctx.drawImage(v,0,0);const im=ctx.getImageData(0,0,c.width,c.height),q=jsQR(im.data,im.width,im.height);if(q){$('urlInput').value=q.data;$('qrMessage').textContent='QR 내용을 읽었습니다. 주소를 확인한 후 검사하세요.';stopCamera();return}}qrTimer=requestAnimationFrame(tick)};
+    v.onloadedmetadata=()=>{v.play();tick()};
+  }catch(e){$('qrMessage').textContent='카메라를 열 수 없습니다. 권한을 확인하거나 QR 이미지 선택을 이용하세요.'}
+};
+$('qrFile').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{await loadQR();const bmp=await createImageBitmap(f),c=$('qrCanvas'),ctx=c.getContext('2d',{willReadFrequently:true});c.width=bmp.width;c.height=bmp.height;ctx.drawImage(bmp,0,0);const im=ctx.getImageData(0,0,c.width,c.height),q=jsQR(im.data,im.width,im.height);if(!q)throw Error();$('urlInput').value=q.data;$('qrMessage').textContent='QR 내용을 읽었습니다. 주소를 확인한 후 검사하세요.'}
+  catch(e){$('qrMessage').textContent='QR을 읽지 못했습니다. 더 선명한 이미지를 사용하세요.'}
+  e.target.value='';
+};
+renderHistory();
+</script>
+</body>
+</html>
