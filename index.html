@@ -1,0 +1,345 @@
+
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<title>LinkGuard — 링크 보안 검사</title>
+<style>
+:root{--bg:#0b1220;--panel:#121d2e;--line:#2a3a52;--text:#edf4ff;--muted:#9fb0c8;--blue:#67a9ff;--green:#4adea1;--yellow:#ffd166;--red:#ff6b7a}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#172a46 0,#0b1220 48%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.5}
+main{width:min(760px,100%);margin:auto;padding:22px 16px 50px}
+.top{display:flex;align-items:center;gap:12px;margin:5px 0 25px}
+.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#6bb7ff,#5b75ff);display:grid;place-items:center;color:#071323;font-size:25px;font-weight:900}
+.brand{font-size:21px;font-weight:850}
+.tag,.small{font-size:12px;color:var(--muted)}
+.pill{margin-left:auto;border:1px solid #315b53;color:var(--green);border-radius:99px;padding:5px 9px;font-size:11px}
+h1{font-size:clamp(27px,6vw,39px);line-height:1.12;margin:0 0 12px}
+.lead{color:var(--muted);margin:0 0 24px}
+.panel{background:linear-gradient(160deg,rgba(23,36,56,.97),rgba(15,25,40,.97));border:1px solid var(--line);border-radius:20px;padding:18px;margin:14px 0;box-shadow:0 12px 35px #0002}
+.label{font-weight:750;font-size:14px;margin-bottom:9px;display:block}
+.urlrow{display:flex;gap:9px}
+.urlrow input{min-width:0;flex:1}
+input{width:100%;background:#0b1423;border:1px solid #34465f;border-radius:12px;padding:14px;color:var(--text);font-size:16px;outline:none}
+input:focus{border-color:var(--blue)}
+button,.filelabel{border:0;border-radius:12px;padding:12px 15px;font-size:14px;font-weight:800;cursor:pointer}
+.primary{background:linear-gradient(135deg,#78bdff,#6d83ff);color:#061326}
+.secondary{background:#23344b;color:var(--text);border:1px solid #3a506b}
+.danger{background:#3a202c;color:#ffb7c0;border:1px solid #693441}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.small{margin:10px 0 0}
+.result{display:none}
+.result.show{display:block}
+.result-head{display:flex;gap:14px;align-items:center}
+.score{width:76px;height:76px;border-radius:50%;border:5px solid var(--yellow);display:grid;place-items:center;flex-shrink:0;font-size:23px;font-weight:900}
+.score.good{border-color:var(--green)}
+.score.warn{border-color:var(--yellow)}
+.score.bad{border-color:var(--red)}
+.result-title{font-size:22px;font-weight:850}
+.muted{color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:13px 0}
+.chip{font-size:12px;border-radius:99px;padding:5px 9px;background:#26364d;color:#c9dcf5}
+.chip.good{color:var(--green);background:#12362f}
+.chip.warn{color:var(--yellow);background:#3a3020}
+.chip.bad{color:#ffb7c0;background:#40232d}
+.checks{list-style:none;padding:0;margin:14px 0 0}
+.checks li{padding:10px 0;border-top:1px solid #293a50;display:flex;gap:10px}
+.mark{font-weight:900;min-width:20px}
+.section-title{font-size:18px;font-weight:850;margin:0 0 6px}
+.history-item{border-top:1px solid #293a50;padding:12px 0;overflow-wrap:anywhere}
+.history-url{font-size:13px;font-weight:700;overflow-wrap:anywhere}
+.history-meta{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:11px;margin-top:5px}
+.history-empty{color:var(--muted);font-size:13px;padding:12px 0}
+.video-wrap{display:none;overflow:hidden;border-radius:14px;background:#050a12}
+.video-wrap.show{display:block}
+video{width:100%;max-height:360px;object-fit:cover}
+.notice{font-size:12px;color:var(--muted);border-left:3px solid var(--yellow);padding-left:10px;margin-top:12px}
+.footer{text-align:center;color:#7e91aa;font-size:11px;margin:25px 0 0}
+.hidden{display:none!important}
+@media(max-width:520px){main{padding:17px 12px 40px}.panel{padding:15px;border-radius:17px}.urlrow{flex-direction:column}.urlrow button{width:100%}.result-head{align-items:flex-start}.score{width:67px;height:67px;font-size:20px}}
+</style>
+</head>
+<body>
+<main>
+<header class="top">
+<div class="logo">✓</div>
+<div><div class="brand">LinkGuard</div><div class="tag">링크 보안 검사 도구</div></div>
+<div class="pill">브라우저 내 검사</div>
+</header>
+
+<h1>링크를 열기 전에<br>먼저 확인하세요.</h1>
+<p class="lead">주소의 의심스러운 특징을 검사하고, 확인에 도움이 되는 정보를 보여 줍니다.</p>
+
+<section class="panel">
+<label class="label" for="urlInput">검사할 URL</label>
+<div class="urlrow">
+<input id="urlInput" type="text" inputmode="url" autocomplete="url" placeholder="https://example.com" aria-label="검사할 URL">
+<button class="primary" id="scanBtn">링크 검사</button>
+</div>
+<div class="actions">
+<button class="secondary" id="pasteBtn">붙여넣기</button>
+<button class="secondary" id="clearBtn">지우기</button>
+</div>
+<p class="small">모르는 링크는 검사 결과와 관계없이 바로 열지 마세요. 비밀번호·인증번호를 입력하지 마세요.</p>
+</section>
+
+<section class="panel result" id="result" aria-live="polite">
+<div class="result-head">
+<div class="score warn" id="scoreCircle"><span id="scoreNum">--</span></div>
+<div>
+<div class="result-title" id="resultTitle">검사 결과</div>
+<div class="muted" id="resultSummary"></div>
+<div class="chips" id="resultChips"></div>
+</div>
+</div>
+<ul class="checks" id="checks"></ul>
+<div class="actions">
+<button class="secondary" id="vtBtn">VirusTotal에서 확인</button>
+<button class="secondary" id="googleBtn">Google Safe Browsing 정보</button>
+<button class="secondary" id="copyBtn">주소 복사</button>
+<button class="secondary" id="reportBtn">결과 JSON 저장</button>
+</div>
+<p class="notice">이 점수는 주소의 특징만으로 계산한 참고 지표입니다. 실시간 악성코드 데이터베이스 조회가 아니며, 낮은 점수도 안전을 보장하지 않습니다.</p>
+</section>
+
+<section class="panel">
+<div class="section-title">QR 코드 검사</div>
+<p class="small">카메라로 QR 코드를 비추거나 QR 이미지 파일을 선택하세요. 읽어 낸 주소는 입력란에 들어갑니다.</p>
+<div class="actions">
+<button class="primary" id="cameraBtn">카메라 시작</button>
+<button class="secondary" id="stopCameraBtn">카메라 종료</button>
+<label class="secondary filelabel" for="qrFile">QR 이미지 선택</label>
+<input class="hidden" id="qrFile" type="file" accept="image/*" capture="environment">
+</div>
+<div class="video-wrap" id="videoWrap"><video id="video" playsinline muted></video></div>
+<canvas id="qrCanvas" class="hidden"></canvas>
+<p id="qrStatus" class="small" aria-live="polite">카메라 사용 시 브라우저의 카메라 권한이 필요합니다.</p>
+</section>
+
+<section class="panel">
+<div class="section-title">검사 기록</div>
+<p class="small">기록은 이 기기의 브라우저에 저장됩니다. 브라우저 데이터를 지우면 사라질 수 있습니다.</p>
+<div class="actions">
+<button class="secondary" id="exportHistoryBtn">기록 내보내기</button>
+<button class="danger" id="clearHistoryBtn">기록 모두 삭제</button>
+</div>
+<div id="history"><div class="history-empty">아직 검사 기록이 없습니다.</div></div>
+</section>
+
+<div class="footer">LinkGuard · 개인정보를 입력하지 말고, 의심스러운 링크는 열지 마세요.</div>
+</main>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const HISTORY_KEY = 'linkguard_history_v2';
+let lastReport = null, stream = null, scanLoop = null, qrLibPromise = null;
+
+function normalizeUrl(raw) {
+  let value = raw.trim();
+  if (!value) throw new Error('먼저 검사할 주소를 입력해 주세요.');
+  if (/[\u0000-\u001f\u007f]/.test(value)) throw new Error('주소에 허용되지 않는 제어 문자가 있습니다.');
+  if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(value)) value = 'https://' + value;
+  let u;
+  try { u = new URL(value); } catch { throw new Error('주소 형식을 확인해 주세요. 예: https://example.com'); }
+  if (!['http:', 'https:'].includes(u.protocol)) throw new Error('HTTP 또는 HTTPS 주소만 검사할 수 있습니다.');
+  if (!u.hostname || (!u.hostname.includes('.') && u.hostname !== 'localhost')) throw new Error('도메인 주소를 확인해 주세요.');
+  return u;
+}
+
+function analyze(raw) {
+  const u = normalizeUrl(raw), host = u.hostname.toLowerCase();
+  const flags = [];
+  let score = 0;
+  const add = (points, title, detail, level='warn') => {
+    score += points;
+    flags.push({points,title,detail,level});
+  };
+
+  if (u.protocol !== 'https:') add(18, 'HTTPS가 아님', '전송 구간이 암호화되지 않을 수 있습니다.', 'bad');
+  if (u.username || u.password || u.href.includes('@')) add(25, '주소에 사용자 정보 또는 @ 포함', '정상 도메인을 가장하는 주소인지 확인하세요.', 'bad');
+  if (host.split('.').some(p => p.startsWith('xn--'))) add(18, '국제화 도메인 표기 감지', '비슷하게 보이는 다른 문자를 사용한 도메인일 수 있습니다.');
+  if (host.split('.').length >= 5) add(10, '하위 도메인이 많음', '도메인 구조가 복잡합니다. 실제 등록 도메인을 확인하세요.');
+  if (host.includes('-') && /login|secure|verify|account|update|wallet|bank|gift|support/i.test(host)) add(12, '민감한 단어와 하이픈 조합', '공식 서비스처럼 보이게 만든 주소인지 확인하세요.');
+  if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(host)) add(20, 'IP 주소를 직접 사용', '브랜드 도메인 대신 IP 주소를 사용합니다.');
+  if (host.length > 35) add(8, '도메인이 매우 김', '철자와 실제 도메인 소유자를 주의 깊게 확인하세요.');
+  if (u.href.length > 180) add(8, '전체 주소가 매우 김', '긴 추적값이나 숨겨진 경로가 포함됐을 수 있습니다.');
+  if (/(login|signin|verify|password|wallet|payment|bank|gift|free|prize|claim|urgent|suspend|unlock)/i.test(u.href)) add(10, '로그인·결제·긴급 관련 단어', '이런 단어만으로 악성 여부가 확정되지는 않습니다.');
+  if (/(bit\.ly|tinyurl\.com|t\.co|is\.gd|cutt\.ly|rb\.gy|shorturl\.at)$/i.test(host)) add(15, '링크 단축 서비스', '최종 목적지가 가려져 있으므로 출처를 먼저 확인하세요.');
+  if (host.split('.').some(p => p.length >= 25)) add(7, '긴 도메인 구성 요소', '철자 바꿔치기나 사칭 가능성을 확인하세요.');
+
+  if (!flags.length) flags.push({points:0,title:'눈에 띄는 기본 위험 신호 없음',detail:'주소 형태만 검사했습니다. 안전하다는 뜻은 아닙니다.',level:'good'});
+  score = Math.max(0, Math.min(100, score));
+  const level = score >= 45 ? 'bad' : score >= 20 ? 'warn' : 'good';
+  return {
+    url:u.href, host, score, level,
+    title:level==='bad'?'위험 신호가 여러 개 감지됨':level==='warn'?'주의가 필요함':'뚜렷한 기본 위험 신호가 적음',
+    summary:level==='bad'?'열지 말고 출처를 별도로 확인하세요.':level==='warn'?'링크를 열기 전에 보낸 사람과 도메인을 확인하세요.':'이 결과만으로 안전하다고 판단하지 마세요.',
+    flags, checkedAt:new Date().toISOString()
+  };
+}
+
+function loadHistory() {
+  try { const x=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]'); return Array.isArray(x)?x:[]; }
+  catch { return []; }
+}
+function saveHistory(item) {
+  const h=loadHistory(); h.unshift(item);
+  localStorage.setItem(HISTORY_KEY,JSON.stringify(h.slice(0,30)));
+  renderHistory();
+}
+function renderReport(r) {
+  lastReport=r;
+  $('result').classList.add('show');
+  $('scoreCircle').className='score '+r.level;
+  $('scoreNum').textContent=r.score;
+  $('resultTitle').textContent=r.title;
+  $('resultSummary').textContent=r.summary;
+  $('resultChips').replaceChildren();
+  const chip=document.createElement('span');
+  chip.className='chip '+r.level;
+  chip.textContent=r.level==='bad'?'위험 신호 높음':r.level==='warn'?'주의 필요':'기본 위험 신호 적음';
+  $('resultChips').appendChild(chip);
+  const domain=document.createElement('span');
+  domain.className='chip'; domain.textContent=r.host;
+  $('resultChips').appendChild(domain);
+  $('checks').replaceChildren();
+  r.flags.forEach(f=>{
+    const li=document.createElement('li'), mark=document.createElement('span'), txt=document.createElement('div'), b=document.createElement('b'), p=document.createElement('div');
+    mark.className='mark';
+    mark.textContent=f.level==='good'?'✓':f.level==='bad'?'!':'•';
+    mark.style.color=f.level==='good'?'var(--green)':f.level==='bad'?'var(--red)':'var(--yellow)';
+    b.textContent=f.title; p.className='small'; p.textContent=f.detail;
+    txt.append(b,p); li.append(mark,txt); $('checks').appendChild(li);
+  });
+  $('result').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function scan(raw) {
+  try {
+    const r=analyze(raw); renderReport(r); saveHistory(r);
+    $('urlInput').value=r.url;
+    $('qrStatus').textContent='주소를 읽었습니다. 「링크 검사」를 눌러 결과를 확인하세요.';
+    return r;
+  } catch(e) { alert(e.message); return null; }
+}
+function safeOpen(url) { window.open(url,'_blank','noopener,noreferrer'); }
+function renderHistory() {
+  const el=$('history'), h=loadHistory(); el.replaceChildren();
+  if (!h.length) {
+    const d=document.createElement('div'); d.className='history-empty'; d.textContent='아직 검사 기록이 없습니다.'; el.appendChild(d); return;
+  }
+  h.slice(0,12).forEach(item=>{
+    const wrap=document.createElement('div'); wrap.className='history-item';
+    const u=document.createElement('div'); u.className='history-url'; u.textContent=item.url;
+    const meta=document.createElement('div'); meta.className='history-meta';
+    const left=document.createElement('span'); left.textContent=new Date(item.checkedAt).toLocaleString();
+    const right=document.createElement('span'); right.textContent=`점수 ${item.score}/100`;
+    right.style.color=item.level==='bad'?'var(--red)':item.level==='warn'?'var(--yellow)':'var(--green)';
+    meta.append(left,right);
+    const btn=document.createElement('button'); btn.className='secondary'; btn.textContent='다시 보기'; btn.style.marginTop='8px';
+    btn.addEventListener('click',()=>renderReport(item));
+    wrap.append(u,meta,btn); el.appendChild(wrap);
+  });
+}
+function download(name,data) {
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+$('scanBtn').addEventListener('click',()=>scan($('urlInput').value));
+$('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')scan($('urlInput').value)});
+$('clearBtn').addEventListener('click',()=>{$('urlInput').value='';$('result').classList.remove('show');$('urlInput').focus()});
+$('pasteBtn').addEventListener('click',async()=>{
+  try {
+    if(!navigator.clipboard?.readText) throw new Error();
+    $('urlInput').value=await navigator.clipboard.readText();
+  } catch {
+    alert('붙여넣기 권한을 사용할 수 없어요. 입력란을 길게 눌러 붙여넣기를 선택해 주세요.');
+  }
+});
+$('vtBtn').addEventListener('click',()=>{if(lastReport)safeOpen('https://www.virustotal.com/gui/home/url')});
+$('googleBtn').addEventListener('click',()=>{if(lastReport)safeOpen('https://transparencyreport.google.com/safe-browsing/search?url='+encodeURIComponent(lastReport.url))});
+$('copyBtn').addEventListener('click',async()=>{
+  if(!lastReport)return;
+  try { await navigator.clipboard.writeText(lastReport.url); alert('주소를 복사했어요.'); }
+  catch { alert('복사할 주소: '+lastReport.url); }
+});
+$('reportBtn').addEventListener('click',()=>{if(lastReport)download('linkguard-report.json',lastReport)});
+$('exportHistoryBtn').addEventListener('click',()=>download('linkguard-history.json',loadHistory()));
+$('clearHistoryBtn').addEventListener('click',()=>{
+  if(confirm('이 기기에 저장된 검사 기록을 모두 삭제할까요?')) {
+    localStorage.removeItem(HISTORY_KEY); renderHistory();
+  }
+});
+
+function loadQrLib() {
+  if(qrLibPromise)return qrLibPromise;
+  qrLibPromise=new Promise((resolve,reject)=>{
+    if(window.jsQR){resolve();return;}
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+    s.onload=resolve;
+    s.onerror=()=>reject(new Error('QR 판독 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.'));
+    document.head.appendChild(s);
+  });
+  return qrLibPromise;
+}
+async function stopCamera() {
+  if(scanLoop){cancelAnimationFrame(scanLoop);scanLoop=null;}
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  $('video').srcObject=null; $('videoWrap').classList.remove('show');
+}
+$('stopCameraBtn').addEventListener('click',async()=>{await stopCamera();$('qrStatus').textContent='카메라를 종료했습니다.'});
+$('cameraBtn').addEventListener('click',async()=>{
+  try {
+    if(!navigator.mediaDevices?.getUserMedia) throw new Error('이 브라우저에서는 카메라를 사용할 수 없습니다. QR 이미지 선택 기능을 이용해 주세요.');
+    await loadQrLib(); await stopCamera();
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+    const video=$('video'); video.srcObject=stream; $('videoWrap').classList.add('show'); await video.play();
+    $('qrStatus').textContent='QR 코드를 카메라 화면 안에 맞춰 주세요.';
+    const canvas=$('qrCanvas'), ctx=canvas.getContext('2d',{willReadFrequently:true});
+    const tick=()=>{
+      if(!stream)return;
+      if(video.readyState>=2) {
+        canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+        ctx.drawImage(video,0,0,canvas.width,canvas.height);
+        const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+        const code=window.jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
+        if(code?.data) {
+          $('urlInput').value=code.data;
+          $('qrStatus').textContent='QR 코드에서 주소를 읽었습니다. 링크 검사를 눌러 확인하세요.';
+          stopCamera(); return;
+        }
+      }
+      scanLoop=requestAnimationFrame(tick);
+    };
+    tick();
+  } catch(e) {
+    $('qrStatus').textContent=e.message||'카메라를 시작하지 못했습니다.';
+    alert(e.message||'카메라를 시작하지 못했습니다.');
+  }
+});
+$('qrFile').addEventListener('change',async e=>{
+  const file=e.target.files?.[0]; if(!file)return;
+  try {
+    await loadQrLib();
+    const bitmap=await createImageBitmap(file), canvas=$('qrCanvas'), ctx=canvas.getContext('2d',{willReadFrequently:true});
+    canvas.width=bitmap.width; canvas.height=bitmap.height; ctx.drawImage(bitmap,0,0);
+    const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+    const code=window.jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
+    if(!code)throw new Error('QR 코드를 찾지 못했어요. 더 선명한 이미지를 선택해 주세요.');
+    $('urlInput').value=code.data;
+    $('qrStatus').textContent='QR 코드에서 내용을 읽었습니다. 주소를 확인한 뒤 링크 검사를 눌러 주세요.';
+  } catch(err) { alert(err.message||'QR 이미지를 읽지 못했습니다.'); }
+  finally { e.target.value=''; }
+});
+renderHistory();
+})();
+</script>
+</body>
+</html>
