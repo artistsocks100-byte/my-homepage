@@ -292,21 +292,6 @@ renderHistory();
 </script>
 
 <script>
-(async function () {
-  try {
-    await fetch("https://linkguard-visitor-admin.artistsocks100.workers.dev/track", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        path: location.pathname
-      })
-    });
-  } catch (error) {
-    console.error("방문 기록 전송 실패");
-  }
-})();
 </script>
 
 </body>
