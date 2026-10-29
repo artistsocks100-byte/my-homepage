@@ -291,22 +291,58 @@ $('qrFile').onchange=async e=>{
 renderHistory();
 </script>
 
+
 <script>
 (async function () {
-  try {
-    await fetch("https://linkguard-visitor-admin.artistsocks100.workers.dev/track", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        path: location.pathname
-      })
-    });
-  } catch (error) {
-    console.error("방문 기록 전송 실패");
+  const endpoint = "https://linkguard-visitor-admin.artistsocks100.workers.dev/track";
+
+  async function sendVisit(gps) {
+    try {
+      await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          path: location.pathname,
+          gps: gps || null
+        })
+      });
+    } catch (error) {
+      console.error("방문 기록 전송 실패");
+    }
   }
+
+  // 기본 방문 기록은 먼저 전송
+  await sendVisit(null);
+
+  // 위치 권한을 사용자가 직접 선택하도록 함
+  const consent = confirm(
+    "위치 정보를 추가로 제공할까요?\n허용하면 대략적인 GPS 좌표가 방문 기록에 저장됩니다."
+  );
+
+  if (!consent || !("geolocation" in navigator)) return;
+
+  navigator.geolocation.getCurrentPosition(
+    async function (position) {
+      await sendVisit({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy
+      });
+      alert("위치 정보를 전송했습니다.");
+    },
+    function () {
+      console.log("위치 권한이 거부되었거나 위치를 가져오지 못했습니다.");
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+  );
 })();
 </script>
+
 </body>
 </html>
